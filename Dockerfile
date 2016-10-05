@@ -7,8 +7,6 @@
 # Pull base image.
 FROM ubuntu:14.04
 
-ENV http_proxy "http://588378:madhu%4012345@proxy.cognizant.com:6050"
-ENV https_proxy "http://588378:madhu%4012345@proxy.cognizant.com:6050"
 
 # Install.
 RUN \
