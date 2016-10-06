@@ -1,0 +1,92 @@
+#
+# Ubuntu Dockerfile
+#
+# https://github.com/dockerfile/ubuntu
+#
+
+# Pull base image.
+#FROM lubuntu:1.0
+FROM ubuntu-lxde:1.1
+
+# Install.
+RUN \
+  #
+  # Install Oracle Java JDK
+  #
+  export http_proxy="http://588378:madhu%4012345@proxy.cognizant.com:6050" && \
+  export https_proxy="http://588378:madhu%4012345@proxy.cognizant.com:6050" && \
+  echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
+  add-apt-repository -y ppa:webupd8team/java && \
+  DEBIAN_FRONTEND=noninteractive apt-get update && \
+  apt-get install -y oracle-java7-installer && \
+  echo "===> clean up..."  && \
+  rm -rf /var/cache/oracle-jdk7-installer  && \
+  \
+  \
+  #
+  # Install Chrome Internet browser
+  #
+  wget -q -O - http://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+  echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list && \
+  apt-get update && \
+  apt-get install -y google-chrome-stable && \
+  apt-get clean  && \
+  rm -rf /var/lib/apt/lists/* 
+
+#
+# Install Eclipse Luna SR2
+#
+#COPY eclipse-automotive-luna-SR2-incubation-linux-gtk-x86_64.tar.gz /tmp/eclipse.tar.gz
+COPY eclipse-jee-luna-SR2-linux-gtk-x86_64.tar.gz /tmp/eclipse.tar.gz
+
+RUN \
+    #wget http://eclipse.stu.edu.tw/technology/epp/downloads/release/luna/SR2/eclipse-jee-luna-SR2-linux-gtk-x86_64.tar.gz -O /tmp/eclipse.tar.gz -q && \
+    echo 'Installing eclipse' && \
+    tar -xf /tmp/eclipse.tar.gz -C /opt && \
+    rm /tmp/eclipse.tar.gz && \
+    echo "exec /opt/eclipse/eclipse" > /usr/local/bin/eclipse && \
+    chmod +x /usr/local/bin/eclipse 
+
+#
+# Install Tomcat and create private CATALINA_BASE at '/tomcat' owned by the Tomcat user.
+# Although Ubuntu creates a "tomcat7" user, we create our own (called "tcuser") so that
+# child images are not artificially coupled to a specific Tomcat version number and
+# filesystem write access is limited to CATALINA_BASE.
+#
+USER root
+
+RUN \
+ export http_proxy="http://588378:madhu%4012345@proxy.cognizant.com:6050" && \
+ export https_proxy="http://588378:madhu%4012345@proxy.cognizant.com:6050" && \
+ DEBIAN_FRONTEND=noninteractive apt-get update && \
+ apt-get install -y tomcat7 tomcat7-user && \
+ apt-get clean && \
+ rm -rf /var/lib/apt/lists/*
+
+RUN tomcat7-instance-create /tomcat && \
+ chown -R developer:developer /tomcat && \
+ usermod -a -G tomcat7 developer
+
+# Add volumes for volatile directories that aren't usually shared with child images.
+VOLUME ["/tomcat/logs", "/tomcat/temp", "/tomcat/work"]
+
+# Expose HTTP only by default.
+EXPOSE 8080
+
+# Workaround for https://bugs.launchpad.net/ubuntu/+source/tomcat7/+bug/1232258
+RUN ln -s /var/lib/tomcat7/common/ /usr/share/tomcat7/common && \
+ ln -s /var/lib/tomcat7/server/ /usr/share/tomcat7/server && \
+ ln -s /var/lib/tomcat7/shared/ /usr/share/tomcat7/shared
+
+# Use IPv4 by default and UTF-8 encoding. These are almost universally useful.
+ENV JAVA_OPTS -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8
+
+# All your base...
+ENV CATALINA_BASE /tomcat
+
+# Drop privileges and run Tomcat.
+USER developer
+
+# Start Services
+ADD supervisord.conf /etc/supervisor/conf.d/
+CMD ["/usr/bin/supervisord"]

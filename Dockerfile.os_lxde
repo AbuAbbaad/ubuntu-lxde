@@ -1,0 +1,60 @@
+#
+# Ubuntu Dockerfile
+#
+# https://github.com/dockerfile/ubuntu
+#
+
+# Pull base image.
+FROM ubuntu:16.04
+
+# Install.
+RUN \
+  export http_proxy="http://588378:madhu%4012345@proxy.cognizant.com:6050" && \
+  export https_proxy="http://588378:madhu%4012345@proxy.cognizant.com:6050" && \
+  sed -i 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list && \
+  #add-apt-repository ppa:webupd8team/java -y && \
+  apt-get update && \
+  apt-get -y upgrade && \
+  apt-get install -y build-essential && \
+  apt-get install -y software-properties-common && \
+  apt-get install -y byobu curl git htop man unzip vim wget && \
+  # Install Ubuntu's lightweight X11 Desktop Environment LXDE
+  DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  	lxde tightvncserver x11vnc \
+	supervisor firefox gnome-themes-standard
+
+# Add developer user
+RUN mkdir -p /home/developer && \
+    echo "developer:x:1000:1000:Developer,,,:/home/developer:/bin/bash" >> /etc/passwd && \
+    echo "developer:x:1000:" >> /etc/group && \
+    echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
+    chmod 0440 /etc/sudoers.d/developer && \
+    chown developer:developer -R /home/developer && \
+    chown root:root /usr/bin/sudo && chmod 4755 /usr/bin/sudo && \
+    mkdir -p /home/developer/Desktop
+
+# Add files.
+#ADD vncserver@.service /etc/systemd/system/vncserver@.service
+ADD root/.bashrc /home/developer/.bashrc
+ADD root/.gitconfig /home/developer/.gitconfig
+ADD root/.scripts /home/developer/.scripts
+
+# Enable VNC server as service
+#RUN systemctl daemon-reload && \
+#    systemctl enable vncserver@1.service
+    #systemctl start vncserver@1
+
+USER developer
+
+# Set environment variables.
+ENV HOME /home/developer
+
+# Define working directory.
+WORKDIR /home/developer
+
+
+# Expose ports for VNC
+EXPOSE 5901
+
+# Define default command.
+CMD ["bash"]
