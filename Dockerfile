@@ -5,7 +5,7 @@
 #
 
 # Pull base image.
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
 
 # Install.
@@ -53,10 +53,10 @@ RUN \
   rm -rf /var/lib/apt/lists/* 
 
 #COPY eclipse-automotive-luna-SR2-incubation-linux-gtk-x86_64.tar.gz /tmp/eclipse.tar.gz
-COPY eclipse-jee-luna-SR2-linux-gtk-x86_64.tar.gz /tmp/eclipse.tar.gz
+#COPY eclipse-jee-luna-SR2-linux-gtk-x86_64.tar.gz /tmp/eclipse.tar.gz
 
 RUN \
-    #wget http://eclipse.stu.edu.tw/technology/epp/downloads/release/luna/SR2/eclipse-jee-luna-SR2-linux-gtk-x86_64.tar.gz -O /tmp/eclipse.tar.gz -q && \
+    wget http://eclipse.stu.edu.tw/technology/epp/downloads/release/luna/SR2/eclipse-jee-luna-SR2-linux-gtk-x86_64.tar.gz -O /tmp/eclipse.tar.gz -q && \
     echo 'Installing eclipse' && \
     tar -xf /tmp/eclipse.tar.gz -C /opt && \
     rm /tmp/eclipse.tar.gz && \

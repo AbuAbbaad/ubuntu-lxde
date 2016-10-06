@@ -5,8 +5,8 @@
 #
 
 # Pull base image.
-#FROM lubuntu:1.0
-FROM ubuntu-lxde:1.1
+FROM ubuntu-lubuntu:1.0
+#FROM ubuntu-lxde:1.1
 
 USER root
 # Install.
@@ -83,6 +83,21 @@ RUN ln -s /var/lib/tomcat7/common/ /usr/share/tomcat7/common && \
  ln -s /var/lib/tomcat7/conf /usr/share/tomcat7/conf && \
  ln -s /etc/tomcat7/policy.d/03catalina.policy /usr/share/tomcat7/conf && \
  chmod -R 777 /usr/share/tomcat7/conf
+
+#
+# Fix Directories for Eclipse to Work with tomcat7
+#
+RUN \
+ cd /usr/share/tomcat7 && \
+ sudo ln -s /var/lib/tomcat7/conf conf && \
+ sudo ln -s /etc/tomcat7/policy.d/03catalina.policy conf/catalina.policy && \
+ sudo ln -s /var/log/tomcat7 log && \
+ sudo chmod -R 777 /usr/share/tomcat7/conf && \
+ sudo mkdir /usr/share/tomcat7/backup && \
+ sudo chmod -R 777 /usr/share/tomcat7/bacup && \
+ sudo ln -s /var/lib/tomcat7/common common && \
+ sudo ln -s /var/lib/tomcat7/server server && \
+ sudo ln -s /var/lib/tomcat7/shared shared
 
 # Use IPv4 by default and UTF-8 encoding. These are almost universally useful.
 ENV JAVA_OPTS -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8
