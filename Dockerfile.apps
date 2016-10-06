@@ -8,6 +8,7 @@
 #FROM lubuntu:1.0
 FROM ubuntu-lxde:1.1
 
+USER root
 # Install.
 RUN \
   #
@@ -47,13 +48,15 @@ RUN \
     echo "exec /opt/eclipse/eclipse" > /usr/local/bin/eclipse && \
     chmod +x /usr/local/bin/eclipse 
 
+ADD eclipse.desktop /usr/share/applications
+ADD eclipse.desktop /home/developer/Desktop
+
 #
 # Install Tomcat and create private CATALINA_BASE at '/tomcat' owned by the Tomcat user.
 # Although Ubuntu creates a "tomcat7" user, we create our own (called "tcuser") so that
 # child images are not artificially coupled to a specific Tomcat version number and
 # filesystem write access is limited to CATALINA_BASE.
 #
-USER root
 
 RUN \
  export http_proxy="http://588378:madhu%4012345@proxy.cognizant.com:6050" && \
@@ -76,7 +79,10 @@ EXPOSE 8080
 # Workaround for https://bugs.launchpad.net/ubuntu/+source/tomcat7/+bug/1232258
 RUN ln -s /var/lib/tomcat7/common/ /usr/share/tomcat7/common && \
  ln -s /var/lib/tomcat7/server/ /usr/share/tomcat7/server && \
- ln -s /var/lib/tomcat7/shared/ /usr/share/tomcat7/shared
+ ln -s /var/lib/tomcat7/shared/ /usr/share/tomcat7/shared && \
+ ln -s /var/lib/tomcat7/conf /usr/share/tomcat7/conf && \
+ ln -s /etc/tomcat7/policy.d/03catalina.policy /usr/share/tomcat7/conf && \
+ chmod -R 777 /usr/share/tomcat7/conf
 
 # Use IPv4 by default and UTF-8 encoding. These are almost universally useful.
 ENV JAVA_OPTS -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8
@@ -87,6 +93,8 @@ ENV CATALINA_BASE /tomcat
 # Drop privileges and run Tomcat.
 USER developer
 
+CMD /usr/share/tomcat7/bin/catalina.sh run
+
 # Start Services
-ADD supervisord.conf /etc/supervisor/conf.d/
-CMD ["/usr/bin/supervisord"]
+#ADD supervisord.conf /etc/supervisor/conf.d/
+#CMD ["/usr/bin/supervisord"]

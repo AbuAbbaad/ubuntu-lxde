@@ -5,7 +5,7 @@
 #
 
 # Pull base image.
-FROM ubuntu:16.04
+FROM ubuntu:14.04
 
 # Install.
 RUN \
@@ -29,7 +29,6 @@ RUN mkdir -p /home/developer && \
     echo "developer:x:1000:" >> /etc/group && \
     echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
     chmod 0440 /etc/sudoers.d/developer && \
-    chown developer:developer -R /home/developer && \
     chown root:root /usr/bin/sudo && chmod 4755 /usr/bin/sudo && \
     mkdir -p /home/developer/Desktop
 
@@ -38,6 +37,7 @@ RUN mkdir -p /home/developer && \
 ADD root/.bashrc /home/developer/.bashrc
 ADD root/.gitconfig /home/developer/.gitconfig
 ADD root/.scripts /home/developer/.scripts
+RUN chown -R developer:developer /home/developer
 
 # Enable VNC server as service
 #RUN systemctl daemon-reload && \
