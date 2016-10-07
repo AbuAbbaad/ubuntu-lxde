@@ -5,10 +5,10 @@
 #
 
 # Pull base image.
-FROM ubuntu-lubuntu:1.0
-#FROM ubuntu-lxde:1.1
+#FROM ubuntu-lubuntu:1.0
+FROM ubuntu-lxde:1.1
 
-USER root
+#USER root
 # Install.
 RUN \
   #
@@ -40,6 +40,29 @@ RUN \
 #COPY eclipse-automotive-luna-SR2-incubation-linux-gtk-x86_64.tar.gz /tmp/eclipse.tar.gz
 COPY eclipse-jee-luna-SR2-linux-gtk-x86_64.tar.gz /tmp/eclipse.tar.gz
 
+# Add developer user
+RUN mkdir -p /home/developer && \
+    echo "developer:x:1000:1000:Developer,,,:/home/developer:/bin/bash" >> /etc/passwd && \
+    echo "developer:x:1000:" >> /etc/group && \
+    echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
+    chmod 0440 /etc/sudoers.d/developer && \
+    chown root:root /usr/bin/sudo && chmod 4755 /usr/bin/sudo && \
+    mkdir -p /home/developer/Desktop
+
+# Add files.
+#ADD vncserver@.service /etc/systemd/system/vncserver@.service
+ADD root/.bashrc /home/developer/.bashrc
+ADD root/.gitconfig /home/developer/.gitconfig
+ADD root/.scripts /home/developer/.scripts
+RUN chown -R developer:developer /home/developer
+
+# Enable VNC server as service
+#RUN systemctl daemon-reload && \
+#    systemctl enable vncserver@1.service
+    #systemctl start vncserver@1
+#
+# Installing Eclipse
+#
 RUN \
     #wget http://eclipse.stu.edu.tw/technology/epp/downloads/release/luna/SR2/eclipse-jee-luna-SR2-linux-gtk-x86_64.tar.gz -O /tmp/eclipse.tar.gz -q && \
     echo 'Installing eclipse' && \
@@ -70,6 +93,16 @@ RUN tomcat7-instance-create /tomcat && \
  chown -R developer:developer /tomcat && \
  usermod -a -G tomcat7 developer
 
+#
+# Install Maven3
+#
+RUN \
+ export http_proxy="http://588378:madhu%4012345@proxy.cognizant.com:6050" && \
+ export https_proxy="http://588378:madhu%4012345@proxy.cognizant.com:6050" && \
+ DEBIAN_FRONTEND=noninteractive add-apt-repository ppa:andrei-pozolotin/maven3 && \
+ apt-get update && \
+ apt-get install -y maven3 
+
 # Add volumes for volatile directories that aren't usually shared with child images.
 VOLUME ["/tomcat/logs", "/tomcat/temp", "/tomcat/work"]
 
@@ -94,7 +127,7 @@ RUN \
  sudo ln -s /var/log/tomcat7 log && \
  sudo chmod -R 777 /usr/share/tomcat7/conf && \
  sudo mkdir /usr/share/tomcat7/backup && \
- sudo chmod -R 777 /usr/share/tomcat7/bacup && \
+ sudo chmod -R 777 /usr/share/tomcat7/backup && \
  sudo ln -s /var/lib/tomcat7/common common && \
  sudo ln -s /var/lib/tomcat7/server server && \
  sudo ln -s /var/lib/tomcat7/shared shared
@@ -108,7 +141,15 @@ ENV CATALINA_BASE /tomcat
 # Drop privileges and run Tomcat.
 USER developer
 
-CMD /usr/share/tomcat7/bin/catalina.sh run
+# Set environment variables.
+ENV HOME /home/developer
+
+# Define working directory.
+WORKDIR /home/developer
+
+# Don't want tomcat7 to be started
+#CMD /usr/share/tomcat7/bin/catalina.sh run
+CMD ["bash"]
 
 # Start Services
 #ADD supervisord.conf /etc/supervisor/conf.d/
